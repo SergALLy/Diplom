@@ -1,0 +1,10 @@
+# ignore catalogs
+**/.settings/
+**/Debug/
+**/Drivers/
+**/Core/Startup/
+
+#ignore files
+*.launch
+*.ld
+*.mxproject
