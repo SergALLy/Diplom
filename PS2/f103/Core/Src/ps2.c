@@ -6,21 +6,21 @@
  */
 #include "ps2.h"
 
-static 	uint8_t cmd_read[9] = {0x01, 0x42, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static uint8_t cmd_read[9] = {0x01, 0x42, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static uint8_t RxData[9] = {0};
 
 bool PS2_Cmd(ps2_handle_t *handle, uint8_t* TxData, uint8_t size)
 {
 	bool success = true;
 
 	CS_H; CS_L;
-	//HAL_SPI_Transmit(&hspi1, TxData, size, 100);
 	success &= (HAL_SPI_Transmit(handle->spi_handle, TxData, size, 100) == HAL_OK);
 	CS_H;
 	return success;
 }
 
 bool PS2_Init(ps2_handle_t *handle)
-{ // Возможно не нужна
+{ // Не робит
 	bool success = true;
 	/*uint8_t ShortPoll[5] = {0x01, 0x42, 0x00, 0x00, 0x00};
 	uint8_t EnterConfig[9] = {0x01, 0x43, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -55,10 +55,19 @@ bool PS2_Init(ps2_handle_t *handle)
 bool PS2_ReadData(ps2_handle_t *handle)
 {
 	bool success = true;
-	CS_H; CS_L;
-	success &= (HAL_SPI_TransmitReceive(handle -> spi_handle, cmd_read, handle -> data, 9, 100) == HAL_OK);
+	CS_H; CS_L; // Чтение данных с джойстика
+	success &= (HAL_SPI_TransmitReceive(handle -> spi_handle, cmd_read, RxData, 9, 100) == HAL_OK);
 	CS_H;
-	success &= ((handle -> data[1] == 0x41) || (handle -> data[1] == 0x73)) && (handle -> data[2] == 0x5A);
+	handle -> ID = RxData[1];
+	// Проверка корректности данных
+	success &= ((handle -> ID == PS2_GREEN_MODE) || (handle -> ID == PS2_RED_MODE)) && (RxData[2] == PS2_READY);
+	handle -> buttons = ~(RxData[3] | RxData[4]<<8);
+	if (handle -> ID == PS2_RED_MODE) {
+		handle -> right_stick.X = RxData[5] - 128;
+		handle -> right_stick.Y = -(RxData[6] - 127);
+		handle -> left_stick.X = RxData[7] - 128;
+		handle -> left_stick.Y = -(RxData[8] - 127);
+	}
 	return success;
 }
 
@@ -68,3 +77,4 @@ void PS2_Vibration(ps2_handle_t *handle,uint8_t motor1, uint8_t motor2)
 	uint8_t buff[9] = {0x01, 0x42, 0x00, motor1, motor2, 0x00, 0x00, 0x00, 0x00};
 	PS2_Cmd(handle, buff, 9);
 }
+
