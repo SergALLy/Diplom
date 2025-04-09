@@ -98,12 +98,8 @@ int main(void)
   MX_I2C3_Init();
   /* USER CODE BEGIN 2 */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
   success &= pca9685_init(&pca);
-  HAL_Delay(10);
-  success &= pca9685_set_pwm_frequency(&pca, 100.0f);
-  HAL_Delay(10);
-  success &= pca9685_set_channel_pwm_times(&pca, 0, 0, 2048);
+  success &= pca9685_set_pwm_frequency(&pca, 50.0f);
   if (success) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
   else HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
   /* USER CODE END 2 */
@@ -113,7 +109,11 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+for (uint16_t i=0; i<4090; i+=10)
+{
+	success &= pca9685_set_channel_pwm_times(&pca, 0, 0, i);
+	HAL_Delay(100);
+}
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

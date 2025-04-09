@@ -1,37 +1,36 @@
-1.Используется библиотека HAL и протокол SPI1
+1.Используется библиотека HAL и протокол SPI
 
-2.Настройки SPI1:
-    Mode: Full-Duplex Master
-    Hardware NSS Signal: Disable
-  Basic Parameters:
-    Frame Format: Motorola
-    Data Size: 8 Bits
-    First Bit: LSB First
-  Clock Parameters:
-    Prescaler: 32
-    Baud Rate: 250.0 KBits/s
-    Clock Polarity: High
-    Clock Phase: 2 Edge
-  Advanced Parameters:
-    CRC Calculation: Disabled
-    NSS Signal Type: Software
+2.Настройки SPI:
+	Mode: Full-Duplex Master
+	Data Size: 8 Bits
+	First Bit: LSB First
+	Baud Rate: 250.0 KBits/s
+	Clock Polarity: High
+	Clock Phase: 2 Edge
 
-3.Необходимо пину SS задать имя PS2_CS
+3.Подключение:
+	SCK  -> CLK
+	MOSI -> COM
+	MISO -> DAT
+	SS   -> ATT
+	
+4.Необходимо пину SS задать имя PS2_CS
 
-4.Для работы необходимо определить переменную типа ps2_handle_t и задать поле .spi_handle.
- Данные с джойстика будут в полях:
+5.Для работы необходимо определить переменную типа ps2_handle_t и задать поле:
+	.spi_handle - дескриптор протокола SPI, подключенного устройства. 
+ Данные с джойстика находятся в полях:
               .ID - режим работы
               .buttons - нажатые кнопки (1 - кнопка нажата; 0 - кнопка не нажата)
-              .right_stick: .X и .Y - Значения по осям X и Y соответсвенно для правого стика
-              .lefr_stick: .X и .Y - Значения по осям X и Y соответсвенно для левого стика
+              .right_stick: .X и .Y - значения по осям X и Y соответсвенно для правого стика
+              .left_stick: .X и .Y - значения по осям X и Y соответсвенно для левого стика
 
-5.Функция bool PS2_ReadData(ps2_handle_t *handle) служит для получения данных с джойстика.
- Входные данные:
- 			handle - Дескриптор джойстика PS2
+6.Функция bool PS2_ReadData(ps2_handle_t *handle) служит для получения данных с джойстика.
+ Входные параметры:
+ 	handle - дескриптор джойстика PS2
  return:
- 			True - успешно, False - иначе
+ 	True - успешно, False - иначе
 
-4.Литература:
-    Даташит: Documents/Ps2_manual
-    https://store.curiousinventor.com/guides/PS2
-    https://gamesx.com/controldata/psxcont/psxcont.htm
+7.Литература:
+	Даташит: Documents/PS2_manual.pdf
+	https://store.curiousinventor.com/guides/PS2
+	https://gamesx.com/controldata/psxcont/psxcont.htm
