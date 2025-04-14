@@ -47,11 +47,11 @@ typedef struct {
 	/*
 	 * Структура для правого стика
 	 */
-	stick right_stick;
+	stick *right_stick;
 	/*
 	 * Структура для левого стика
 	 */
-	stick left_stick;
+	stick *left_stick;
 } ps2_handle_t;
 
 #define CS_H			HAL_GPIO_WritePin(PS2_CS_GPIO_Port, PS2_CS_Pin, GPIO_PIN_SET)
