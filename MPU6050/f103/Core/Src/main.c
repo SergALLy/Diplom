@@ -23,6 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stdbool.h"
 #include "mpu6050.h"
 /* USER CODE END Includes */
 
@@ -44,6 +45,11 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+mpu6050_handle_t mpu = {
+		.i2c_handle = &hi2c1,
+		.device_address = MPU6050_I2C_DEFAULT_DEVICE_ADDRESS
+};
+bool success = true;
 
 /* USER CODE END PV */
 
@@ -89,7 +95,7 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-
+  success &= mpu6050_init(&mpu, 1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -99,6 +105,10 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  success &= mpu6050_read_all(&mpu);
+	  if (success == true) HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_SET);
+	  else HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
+	  HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }
