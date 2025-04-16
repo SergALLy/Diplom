@@ -70,10 +70,10 @@ bool PS2_ReadData(ps2_handle_t *handle)
 	success &= ((handle -> ID == PS2_GREEN_MODE) || (handle -> ID == PS2_RED_MODE)) && (RxData[2] == PS2_READY);
 	handle -> buttons = ~(RxData[3] | RxData[4]<<8);
 	if (handle -> ID == PS2_RED_MODE) {
-		handle -> right_stick -> X = RxData[5] - 128;
-		handle -> right_stick -> Y = -(RxData[6] - 127);
-		handle -> left_stick -> X = RxData[7] - 128;
-		handle -> left_stick -> Y = -(RxData[8] - 127);
+		handle -> right_stick.X = RxData[5] - 128;
+		handle -> right_stick.Y = RxData[6] - 128;
+		handle -> left_stick.X = RxData[7] - 128;
+		handle -> left_stick.Y = RxData[8] - 128;
 	}
 	return success;
 }
