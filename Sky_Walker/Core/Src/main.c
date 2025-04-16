@@ -30,6 +30,7 @@
 //#include "pca9685.h"
 #include "ps2.h"
 #include "walker.h"
+#include "walker_config.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -54,20 +55,13 @@ ps2_handle_t ps = {
 		.spi_handle = &hspi2
 };
 
-pca9685_handle_t pca_left = {
-		.i2c_handle = &hi2c2,
-		.device_address = PCA9685_I2C_DEFAULT_DEVICE_ADDRESS,
-		.inverted = false
-};
-
-pca9685_handle_t pca_right = {
-		.i2c_handle = &hi2c3,
-		.device_address = PCA9685_I2C_DEFAULT_DEVICE_ADDRESS,
-		.inverted = false
-};
-
 walker_handle_t sky_walker = {
-
+		.leg_1 = &leg1,
+		.leg_2 = &leg2,
+		.leg_3 = &leg3,
+		.leg_4 = &leg4,
+		.leg_5 = &leg5,
+		.leg_6 = &leg6
 };
 
 bool success = true;
@@ -119,7 +113,7 @@ int main(void)
   MX_I2C3_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
-
+  PS2_ReadData(&ps);
   /* USER CODE END 2 */
 
   /* Infinite loop */

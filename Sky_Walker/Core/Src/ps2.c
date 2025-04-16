@@ -9,7 +9,7 @@
 static uint8_t cmd_read[9] = {0x01, 0x42, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 static uint8_t RxData[9] = {0};
 
-bool PS2_Cmd(ps2_handle_t *handle, uint8_t* TxData, uint8_t size)
+static bool PS2_Cmd(ps2_handle_t *handle, uint8_t* TxData, uint8_t size)
 {
 	bool success = true;
 
@@ -54,6 +54,13 @@ bool PS2_Init(ps2_handle_t *handle)
 
 bool PS2_ReadData(ps2_handle_t *handle)
 {
+	/*
+	 * Чтения данных с джойстика PS2
+	 * Входные данные:
+	 * 			handle - Дескриптор джойстика PS2
+	 * return:
+	 * 			True - успешно, False - иначе
+	 */
 	bool success = true;
 	CS_H; CS_L; // Чтение данных с джойстика
 	success &= (HAL_SPI_TransmitReceive(handle -> spi_handle, cmd_read, RxData, 9, 100) == HAL_OK);
@@ -64,9 +71,9 @@ bool PS2_ReadData(ps2_handle_t *handle)
 	handle -> buttons = ~(RxData[3] | RxData[4]<<8);
 	if (handle -> ID == PS2_RED_MODE) {
 		handle -> right_stick.X = RxData[5] - 128;
-		handle -> right_stick.Y = -(RxData[6] - 127);
+		handle -> right_stick.Y = RxData[6] - 128;
 		handle -> left_stick.X = RxData[7] - 128;
-		handle -> left_stick.Y = -(RxData[8] - 127);
+		handle -> left_stick.Y = RxData[8] - 128;
 	}
 	return success;
 }
