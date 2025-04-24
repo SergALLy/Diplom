@@ -20,6 +20,7 @@ typedef struct {
 	uint8_t thigh; // Бедро, канал сервопривода
 	uint8_t knee; // Колено, канал сервопривода
 	uint8_t foot; // Стопа, канал сервопривода
+	bool is_right;
 } leg_handle_t;
 
 typedef struct {
@@ -52,7 +53,20 @@ bool walker_init(pca9685_handle_t* pca_1, pca9685_handle_t* pca_2);
  * 		True - успешно
  * 		False - иначе
  */
-bool walker_servo_neultral(walker_handle_t *handle);
+bool walker_servo_init(walker_handle_t *handle);
+
+/*
+ * Назначение: Перевод угла в градусах в ШИМ
+ * Входные параметры:
+ * 		angle: Углов в градусах в пределах от [-135; 135]
+ * Return:
+ * 		Значение ШИМ (time off)
+ */
+uint16_t angle_2_u16(float angle);
+
+bool walker_step (leg_handle_t *leg, float *angle);
+
+bool walker_body (leg_handle_t *first_leg, leg_handle_t *second_leg, float *angle);
 
 bool walker_run(walker_handle_t *walker, stick *stick);
 

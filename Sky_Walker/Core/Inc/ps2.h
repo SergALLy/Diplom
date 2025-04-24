@@ -20,9 +20,9 @@ typedef struct{
 	int8_t X;
 	/*
 	 * Значение стика по оси Y:
-	 * -128 - крайнее верхнее
+	 * -128 - крайнее нижнее
 	 * 0 - среднее положение
-	 * 127 - крайнее нижнее
+	 * 127 - крайнее верхнее
 	 */
 	int8_t Y;
 } stick;
@@ -77,6 +77,8 @@ typedef struct {
 #define BUTTON_CIRCLE   (1 << 13)
 #define BUTTON_CROSS    (1 << 14)
 #define BUTTON_SQUARE   (1 << 15)
+
+#define PS2_READ_BUTTON(BYTE,MASK)	((BYTE) & (uint16_t)(MASK))
 
 /*
  * Чтения данных с джойстика PS2

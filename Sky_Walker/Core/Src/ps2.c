@@ -71,9 +71,9 @@ bool PS2_ReadData(ps2_handle_t *handle)
 	handle -> buttons = ~(RxData[3] | RxData[4]<<8);
 	if (handle -> ID == PS2_RED_MODE) {
 		handle -> right_stick.X = RxData[5] - 128;
-		handle -> right_stick.Y = RxData[6] - 128;
+		handle -> right_stick.Y = 127 - RxData[6];
 		handle -> left_stick.X = RxData[7] - 128;
-		handle -> left_stick.Y = RxData[8] - 128;
+		handle -> left_stick.Y = 127 - RxData[8];
 	}
 	return success;
 }
@@ -84,4 +84,3 @@ void PS2_Vibration(ps2_handle_t *handle,uint8_t motor1, uint8_t motor2)
 	uint8_t buff[9] = {0x01, 0x42, 0x00, motor1, motor2, 0x00, 0x00, 0x00, 0x00};
 	PS2_Cmd(handle, buff, 9);
 }
-

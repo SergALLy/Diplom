@@ -9,6 +9,7 @@
 #define INC_WALKER_CONFIG_H_
 
 #include "walker.h"
+#include "stdbool.h"
 #include "i2c.h"
 
 extern pca9685_handle_t pca_left;
