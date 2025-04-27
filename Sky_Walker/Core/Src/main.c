@@ -27,11 +27,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdbool.h"
-//#include "mpu6050.h"
-//#include "pca9685.h"
-#include "ps2.h"
+#include "stdlib.h"
 #include "walker.h"
-#include "walker_config.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -54,15 +51,6 @@
 /* USER CODE BEGIN PV */
 ps2_handle_t ps = { // Джойстик PS2
 		.spi_handle = &hspi2
-};
-
-walker_handle_t sky_walker = { // Робот
-		.leg_1 = &leg1, // Правая Передняя
-		.leg_2 = &leg2,	// Левая Центр
-		.leg_3 = &leg3,	// Правая Задняя
-		.leg_4 = &leg4,	// Левая Передняя
-		.leg_5 = &leg5,	// Правая Задняя
-		.leg_6 = &leg6	// Левая Задняя
 };
 
 bool success = true; // Флаг успешной работы программы
@@ -128,92 +116,32 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  PS2_ReadData(&ps);
+	  HAL_Delay(20);
+
 	// Кнопка Start -> Все сервоприводы в центральное положение
-	if PS2_READ_BUTTON(ps.buttons, BUTTON_START) success &= walker_servo_init(&sky_walker);
+	if PS2_READ_BUTTON(ps.buttons, BUTTON_START)
+			success &= walker_servo_nelrtal(&sky_walker);
+	// Движение
+	if (ps.ID == PS2_RED_MODE)
+	{
 
-	// Движение по осям X, Y
-	if (ps.ID == PS2_RED_MODE){
-		if (ps.right_stick.Y != 0 || ps.right_stick.X !=0 ) {
-			success &= walker_run(&sky_walker, &ps.right_stick);
-		}
-		uint16_t pwm = 0;
-		if PS2_READ_BUTTON(ps.buttons, BUTTON_UP){
-			pwm = angle_2_u16(40);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_1->pca_handle, sky_walker.leg_1->knee, 0, pwm);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_2->pca_handle, sky_walker.leg_2->knee, 0, pwm);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_3->pca_handle, sky_walker.leg_3->knee, 0, pwm);
-		}
-		if PS2_READ_BUTTON(ps.buttons, BUTTON_RIGHT){
-			pwm = angle_2_u16(30);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_1->pca_handle, sky_walker.leg_1->thigh, 0, pwm);
-			pwm = angle_2_u16(-30);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_2->pca_handle, sky_walker.leg_2->thigh, 0, pwm);
-			pwm = angle_2_u16(30);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_3->pca_handle, sky_walker.leg_3->thigh, 0, pwm);
-		}
-		if PS2_READ_BUTTON(ps.buttons, BUTTON_DOWN){
-			pwm = angle_2_u16(0);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_1->pca_handle, sky_walker.leg_1->knee, 0, pwm);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_2->pca_handle, sky_walker.leg_2->knee, 0, pwm);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_3->pca_handle, sky_walker.leg_3->knee, 0, pwm);
-		}
-		if PS2_READ_BUTTON(ps.buttons, BUTTON_LEFT){
-			pwm = angle_2_u16(0);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_1->pca_handle, sky_walker.leg_1->thigh, 0, pwm);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_2->pca_handle, sky_walker.leg_2->thigh, 0, pwm);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_3->pca_handle, sky_walker.leg_3->thigh, 0, pwm);
-
-			pwm = angle_2_u16(30);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_4->pca_handle, sky_walker.leg_4->thigh, 0, pwm);
-			pwm = angle_2_u16(-30);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_5->pca_handle, sky_walker.leg_5->thigh, 0, pwm);
-			pwm = angle_2_u16(30);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_6->pca_handle, sky_walker.leg_6->thigh, 0, pwm);
+		for (uint8_t i =0; i<6; i++)
+		{
+			success &= walker_calc_ik(&sky_walker, i, sky_walker[i].X, sky_walker[i].Y, sky_walker[i].Z);
 		}
 
-		if PS2_READ_BUTTON(ps.buttons, BUTTON_TRIANGLE){
-			pwm = angle_2_u16(40);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_4->pca_handle, sky_walker.leg_4->knee, 0, pwm);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_5->pca_handle, sky_walker.leg_5->knee, 0, pwm);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_6->pca_handle, sky_walker.leg_6->knee, 0, pwm);
+		if ((abs(ps.right_stick.Y) > 15) || (abs(ps.right_stick.X) > 15) || (abs(ps.right_stick.Y) > 15))
+		{
+			walker_tripod_mode(&ps, &sky_walker);
 		}
-		if PS2_READ_BUTTON(ps.buttons, BUTTON_CIRCLE){
-			pwm = angle_2_u16(-30);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_4->pca_handle, sky_walker.leg_4->thigh, 0, pwm);
-			pwm = angle_2_u16(30);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_5->pca_handle, sky_walker.leg_5->thigh, 0, pwm);
-			pwm = angle_2_u16(-30);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_6->pca_handle, sky_walker.leg_6->thigh, 0, pwm);
-		}
-		if PS2_READ_BUTTON(ps.buttons, BUTTON_CROSS){
-			pwm = angle_2_u16(0);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_4->pca_handle, sky_walker.leg_4->knee, 0, pwm);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_5->pca_handle, sky_walker.leg_5->knee, 0, pwm);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_6->pca_handle, sky_walker.leg_6->knee, 0, pwm);
-		}
-		if PS2_READ_BUTTON(ps.buttons, BUTTON_SQUARE){
-			pwm = angle_2_u16(0);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_4->pca_handle, sky_walker.leg_4->thigh, 0, pwm);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_5->pca_handle, sky_walker.leg_5->thigh, 0, pwm);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_6->pca_handle, sky_walker.leg_6->thigh, 0, pwm);
-
-			pwm = angle_2_u16(-30);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_1->pca_handle, sky_walker.leg_1->thigh, 0, pwm);
-			pwm = angle_2_u16(30);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_2->pca_handle, sky_walker.leg_2->thigh, 0, pwm);
-			pwm = angle_2_u16(-30);
-			success &= pca9685_set_channel_pwm_times(sky_walker.leg_3->pca_handle, sky_walker.leg_3->thigh, 0, pwm);
-		}
-
-
 	}
-
-
 
 	if (success == true) HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 	else HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
   }
+
   /* USER CODE END 3 */
 }
 
@@ -272,6 +200,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) // Функция о
   if (htim->Instance == TIM6) // Прерывание от таймерв 6
   {
     PS2_ReadData(&ps);
+	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
   }
 }
 /* USER CODE END 4 */

@@ -12,28 +12,20 @@
 #include "stdbool.h"
 #include "pca9685.h"
 #include "ps2.h"
-//#include "stm32l4xx_hal.h"
-//#include "main.h"
 
 typedef struct {
 	pca9685_handle_t *pca_handle;
-	uint8_t thigh; // Бедро, канал сервопривода
-	uint8_t knee; // Колено, канал сервопривода
-	uint8_t foot; // Стопа, канал сервопривода
-	bool is_right;
+	uint8_t coxa; 	// Серво, ближайший к корпусу
+	uint8_t femur; 	// Среднее серво
+	uint8_t tibia; 	// Серво, ближайший к концу конечности
+	float X;
+	float Y;
+	float Z;
 } leg_handle_t;
 
-typedef struct {
-	leg_handle_t *leg_1;
-	leg_handle_t *leg_2;
-	leg_handle_t *leg_3;
-	leg_handle_t *leg_4;
-	leg_handle_t *leg_5;
-	leg_handle_t *leg_6;
-} walker_handle_t;
+typedef leg_handle_t walker_handle_t[6];
 
-#define MAX_ANGLE 	30
-#define MIN_ANGLE	-30
+#include "walker_config.h"
 
 /*
  * Назначение: Инициализация драйверов pca9685
@@ -43,7 +35,7 @@ typedef struct {
  * 		True - инициализация успешно
  * 		False - иначе
  */
-bool walker_init(pca9685_handle_t* pca_1, pca9685_handle_t* pca_2);
+bool walker_init(pca9685_handle_t *pca_1, pca9685_handle_t *pca_2);
 
 /*
  * Назначение: Вывод всех сервоприводов в нейтральное положение
@@ -53,21 +45,11 @@ bool walker_init(pca9685_handle_t* pca_1, pca9685_handle_t* pca_2);
  * 		True - успешно
  * 		False - иначе
  */
-bool walker_servo_init(walker_handle_t *handle);
+bool walker_servo_nelrtal(walker_handle_t *walker);
 
-/*
- * Назначение: Перевод угла в градусах в ШИМ
- * Входные параметры:
- * 		angle: Углов в градусах в пределах от [-135; 135]
- * Return:
- * 		Значение ШИМ (time off)
- */
-uint16_t angle_2_u16(float angle);
+bool walker_calc_ik(walker_handle_t *walker, uint8_t leg_number, float x,
+		float y, float z);
 
-bool walker_step (leg_handle_t *leg, float *angle);
-
-bool walker_body (leg_handle_t *first_leg, leg_handle_t *second_leg, float *angle);
-
-bool walker_run(walker_handle_t *walker, stick *stick);
+void walker_tripod_mode(ps2_handle_t *ps, walker_handle_t *walker);
 
 #endif /* INC_WALKER_H_ */

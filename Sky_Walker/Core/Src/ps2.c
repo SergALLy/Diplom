@@ -9,6 +9,25 @@
 static uint8_t cmd_read[9] = {0x01, 0x42, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 static uint8_t RxData[9] = {0};
 
+static float map(float min_1, float max_1, float value, float min_2, float max_2)
+{
+	/*
+	 *  Назначение: перерасчёт значения из 1 интервала в значение из 2 интервала
+	 *  Входные параматеры:
+	 *  	min_1: Нижняя граница исходного интервала
+	 *  	max_1: Верхняя граница исходного интервала
+	 *  	value: Значение в исходном интервале
+	 *  	min_2: Нижняя граница нового интервала
+	 *  	max_2^ Верхняя граница нового интервала
+	 *  Return:
+	 *  	Значение в новом интервале
+	 */
+	if (value <= min_1) return min_2;
+    if (value == 0) return (max_2 - min_2)/2+min_2;
+	if (value >= max_1) return max_2;
+	return (value-min_1)/(max_1-min_1)*(max_2-min_2) + min_2;
+}
+
 static bool PS2_Cmd(ps2_handle_t *handle, uint8_t* TxData, uint8_t size)
 {
 	bool success = true;
@@ -70,10 +89,10 @@ bool PS2_ReadData(ps2_handle_t *handle)
 	success &= ((handle -> ID == PS2_GREEN_MODE) || (handle -> ID == PS2_RED_MODE)) && (RxData[2] == PS2_READY);
 	handle -> buttons = ~(RxData[3] | RxData[4]<<8);
 	if (handle -> ID == PS2_RED_MODE) {
-		handle -> right_stick.X = RxData[5] - 128;
-		handle -> right_stick.Y = 127 - RxData[6];
-		handle -> left_stick.X = RxData[7] - 128;
-		handle -> left_stick.Y = 127 - RxData[8];
+		handle -> right_stick.X = map(0, 255, RxData[5], -127, 127);
+		handle -> right_stick.Y = map(0, 255, RxData[6], 127, -127);
+		handle -> left_stick.X = map(0, 255, RxData[7], -127, 127);
+		handle -> left_stick.Y = -map(0, 255, RxData[8], -127, 127);
 	}
 	return success;
 }
