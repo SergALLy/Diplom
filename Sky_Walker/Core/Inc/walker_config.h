@@ -13,7 +13,7 @@
 #include "spi.h"
 
 #define PERIOD_MS		3.0f		// Период ШИМа
-#define DURATION		157 		// Продолжительность шага
+#define DURATION		314 		// Продолжительность шага
 
 #define COXA_LENGTH 	61.0f		// Длина от оси серво coxa до оси серво femur
 #define FEMUR_LENGTH	75.3f		// Длина от оси серво femur до оси серво tibia

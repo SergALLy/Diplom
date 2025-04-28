@@ -248,7 +248,7 @@ bool walker_init(pca9685_handle_t *pca_1, pca9685_handle_t *pca_2) {
 	sky_walker[4] = leg5;	sky_walker[5] = leg6;
 
 	bool success = true;
-	float frequence = 1/PERIOD_MS;
+	float frequence = 1/PERIOD_MS * 1000;
 	// Установка периода ШИМа 3 мс
 	success &= pca9685_init(pca_1);
 	success &= pca9685_set_pwm_frequency(pca_1, frequence);
