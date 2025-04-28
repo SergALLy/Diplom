@@ -120,20 +120,20 @@ int main(void)
 	  HAL_Delay(20);
 
 	// Кнопка Start -> Все сервоприводы в центральное положение
-	if PS2_READ_BUTTON(ps.buttons, BUTTON_START)
-			success &= walker_servo_nelrtal(&sky_walker);
+	if (PS2_READ_BUTTON(ps.buttons, BUTTON_START) && ps.ID == PS2_GREEN_MODE)
+			success &= walker_servo_nelrtal();
 	// Движение
 	if (ps.ID == PS2_RED_MODE)
 	{
 
 		for (uint8_t i =0; i<6; i++)
 		{
-			success &= walker_calc_ik(&sky_walker, i, sky_walker[i].X, sky_walker[i].Y, sky_walker[i].Z);
+			success &= walker_calc_ik(i, sky_walker[i].X, sky_walker[i].Y, sky_walker[i].Z);
 		}
 
 		if ((abs(ps.right_stick.Y) > 15) || (abs(ps.right_stick.X) > 15) || (abs(ps.right_stick.Y) > 15))
 		{
-			walker_tripod_mode(&ps, &sky_walker);
+			walker_tripod_mode(&ps);
 		}
 	}
 
@@ -200,7 +200,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) // Функция о
   if (htim->Instance == TIM6) // Прерывание от таймерв 6
   {
     PS2_ReadData(&ps);
-	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
   }
 }
 /* USER CODE END 4 */

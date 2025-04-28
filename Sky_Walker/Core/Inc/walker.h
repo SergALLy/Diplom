@@ -45,11 +45,11 @@ bool walker_init(pca9685_handle_t *pca_1, pca9685_handle_t *pca_2);
  * 		True - успешно
  * 		False - иначе
  */
-bool walker_servo_nelrtal(walker_handle_t *walker);
+bool walker_servo_nelrtal();
 
-bool walker_calc_ik(walker_handle_t *walker, uint8_t leg_number, float x,
+bool walker_calc_ik(uint8_t leg_number, float x,
 		float y, float z);
 
-void walker_tripod_mode(ps2_handle_t *ps, walker_handle_t *walker);
+void walker_tripod_mode(ps2_handle_t *ps);
 
 #endif /* INC_WALKER_H_ */

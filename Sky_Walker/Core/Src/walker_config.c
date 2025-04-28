@@ -7,14 +7,16 @@
 #include "walker_config.h"
 
 const float home_x[6] = {  96.4,    0.0,  -96.4,  -96.4,    0.0,   96.4};
+//const float home_x[6] = {  96.4,    0.0,  -96.4,  -96.4,    0.0,   96.4};
 const float home_y[6] = {  96.4,  136.3,   96.4,  -96.4, -136.3,  -96.4};
+//const float home_z[6] = {  -150,   -150,   -150,   -150,   -150,   -150};
 const float home_z[6] = {  -115,   -115,   -115,   -115,   -115,   -115};
 // Расстояние от центра корпуса до серва coxa
 const float body_x[6] = {134.0, 0.0, -134.0, -134.0, 0.0, 134.0};
 const float body_y[6] = {81.5, 109.6, 81.5, -81.5, -109.6, -81.5};
 const float body_z[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
-const int8_t coxa_cal[6]  = {0, 0, 0, 0, 0, 0};
+const int8_t coxa_cal[6]  = {0, 1, 0, -1, -1, 1};
 const int8_t femur_cal[6]  = {0, 0, 0, 0, 0, 0};
 const int8_t tibia_cal[6] = {0, 0, 0, 0, 0, 0};
 

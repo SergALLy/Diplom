@@ -88,10 +88,10 @@ static void calc_step_len(int8_t x, int8_t y, int8_t z) {
 
 static void calc_ampl(uint8_t leg_num, float *amp) {
 	float total_X = home_x[leg_num] + body_x[leg_num];
-	float total_Y = home_x[leg_num] + body_x[leg_num];
+	float total_Y = home_y[leg_num] + body_y[leg_num];
 
-	float rot_offset_x = total_X * sin_rot_Z + total_X * cos_rot_Z - total_X;
-	float rot_offset_y = total_Y * cos_rot_Z - total_Y * sin_rot_Z - total_Y;
+	float rot_offset_x = total_Y * sin_rot_Z + total_X * cos_rot_Z - total_X;
+	float rot_offset_y = total_Y * cos_rot_Z - total_X * sin_rot_Z - total_Y;
 
 	amp[0] = (step_len_X + rot_offset_x) / 2.0;
 	amp[1] = (step_len_Y + rot_offset_y) / 2.0;
@@ -104,15 +104,15 @@ static void calc_ampl(uint8_t leg_num, float *amp) {
 		amp[2] = (step_len_Y + rot_offset_y) / 4.0;
 }
 
-static bool walker_servo_write(leg_handle_t *leg, float coxa_angle,
+static bool walker_servo_write(uint8_t leg_num, float coxa_angle,
 		float femur_angle, float tibia_angle) {
 	bool success = true;
 
-	success &= pca9685_set_channel_pwm_times(leg->pca_handle, leg->coxa, 0,
+	success &= pca9685_set_channel_pwm_times(sky_walker[leg_num].pca_handle, sky_walker[leg_num].coxa, 0,
 			angle_2_u16(coxa_angle));
-	success &= pca9685_set_channel_pwm_times(leg->pca_handle, leg->femur, 0,
+	success &= pca9685_set_channel_pwm_times(sky_walker[leg_num].pca_handle, sky_walker[leg_num].femur, 0,
 			angle_2_u16(femur_angle));
-	success &= pca9685_set_channel_pwm_times(leg->pca_handle, leg->tibia, 0,
+	success &= pca9685_set_channel_pwm_times(sky_walker[leg_num].pca_handle, sky_walker[leg_num].tibia, 0,
 			angle_2_u16(tibia_angle));
 	return success;
 }
@@ -127,7 +127,7 @@ static bool walker_servo_write(leg_handle_t *leg, float coxa_angle,
  * 		angle	-> вверх;	-angle	-> вниз
  */
 
-bool walker_calc_ik(walker_handle_t *walker, uint8_t leg_number, float x,
+bool walker_calc_ik(uint8_t leg_number, float x,
 		float y, float z) {
 	/*
 	 * Назначение: Расчёт углов сервоприводов
@@ -159,7 +159,7 @@ bool walker_calc_ik(walker_handle_t *walker, uint8_t leg_number, float x,
 		// расчёт угла для серво femur
 		gamma_femur = atan2(z, L0);
 		phi_femur = acos(
-				(pow(FEMUR_LENGTH, 1) + pow(L3, 1) - pow(TIBIA_LENGTH, 1))
+				(pow(FEMUR_LENGTH, 2) + pow(L3, 2) - pow(TIBIA_LENGTH, 2))
 						/ (2 * FEMUR_LENGTH * L3));
 		femur_angle = (phi_femur + gamma_femur) * RAD_TO_DEG + 14.0 + 90.0
 				+ femur_cal[leg_number];
@@ -175,19 +175,19 @@ bool walker_calc_ik(walker_handle_t *walker, uint8_t leg_number, float x,
 		case 0:
 			coxa_angle = coxa_angle + 45.0;        //compensate for leg mounting
 			coxa_angle = constrain(coxa_angle, 0.0, 180.0);
-			success &= walker_servo_write(walker[leg_number], coxa_angle,
+			success &= walker_servo_write(leg_number, coxa_angle,
 					femur_angle, tibia_angle);
 			break;
 		case 1:
 			coxa_angle = coxa_angle + 90.0;        //compensate for leg mounting
 			coxa_angle = constrain(coxa_angle, 0.0, 180.0);
-			success &= walker_servo_write(walker[leg_number], coxa_angle,
+			success &= walker_servo_write(leg_number, coxa_angle,
 					femur_angle, tibia_angle);
 			break;
 		case 2:
 			coxa_angle = coxa_angle + 135.0;       //compensate for leg mounting
 			coxa_angle = constrain(coxa_angle, 0.0, 180.0);
-			success &= walker_servo_write(walker[leg_number], coxa_angle,
+			success &= walker_servo_write(leg_number, coxa_angle,
 					femur_angle, tibia_angle);
 			break;
 		case 3:
@@ -197,7 +197,7 @@ bool walker_calc_ik(walker_handle_t *walker, uint8_t leg_number, float x,
 				//  positive and negative offsets
 				coxa_angle = coxa_angle - 135.0; //  due to atan2 results above!)
 			coxa_angle = constrain(coxa_angle, 0.0, 180.0);
-			success &= walker_servo_write(walker[leg_number], coxa_angle,
+			success &= walker_servo_write(leg_number, coxa_angle,
 					femur_angle, tibia_angle);
 			break;
 		case 4:
@@ -207,7 +207,7 @@ bool walker_calc_ik(walker_handle_t *walker, uint8_t leg_number, float x,
 				//  positive and negative offsets
 				coxa_angle = coxa_angle - 90.0; //  due to atan2 results above!)
 			coxa_angle = constrain(coxa_angle, 0.0, 180.0);
-			success &= walker_servo_write(walker[leg_number], coxa_angle,
+			success &= walker_servo_write(leg_number, coxa_angle,
 					femur_angle, tibia_angle);
 			break;
 		case 5:
@@ -217,7 +217,7 @@ bool walker_calc_ik(walker_handle_t *walker, uint8_t leg_number, float x,
 				//  positive and negative offsets
 				coxa_angle = coxa_angle - 45.0; //  due to atan2 results above!)
 			coxa_angle = constrain(coxa_angle, 0.0, 180.0);
-			success &= walker_servo_write(walker[leg_number], coxa_angle,
+			success &= walker_servo_write(leg_number, coxa_angle,
 					femur_angle, tibia_angle);
 			break;
 		}
@@ -251,7 +251,7 @@ bool walker_init(pca9685_handle_t *pca_1, pca9685_handle_t *pca_2) {
 	return success;
 }
 
-bool walker_servo_nelrtal(walker_handle_t *walker) {
+bool walker_servo_nelrtal() {
 	/*
 	 * Назначение: Вывод всех сервоприводов в нейтральное положение
 	 * Входные параметры:
@@ -263,16 +263,16 @@ bool walker_servo_nelrtal(walker_handle_t *walker) {
 	bool success = true;
 
 	for (uint8_t i = 0; i < 6; i++) {
-		success &= walker_servo_write(walker[i], 90 + coxa_cal[i],
+		success &= walker_servo_write(i, 90 + coxa_cal[i],
 				90 + femur_cal[i], 90 + tibia_cal[i]);
 	}
 	return success;
 }
 
-void walker_tripod_mode(ps2_handle_t *ps, walker_handle_t *walker) {
+void walker_tripod_mode(ps2_handle_t *ps) {
 	float amplitudes[3] = { 0, 0, 0 };
-	int8_t RX = ps->right_stick.X;
-	int8_t RY = ps->right_stick.Y;
+	int8_t RX = ps->right_stick.Y;
+	int8_t RY = ps->right_stick.X;
 	int8_t LX = ps->left_stick.X;
 
 	//if commands more than deadband then process
@@ -284,17 +284,17 @@ void walker_tripod_mode(ps2_handle_t *ps, walker_handle_t *walker) {
 			calc_ampl(leg_num, amplitudes);
 			switch (tripod_mode[leg_num]) {
 			case 1:                        //move foot forward (raise and lower)
-				walker[leg_num]->X = home_x[leg_num] - amplitudes[0] * cos(phi);
-				walker[leg_num]->Y = home_y[leg_num] - amplitudes[1] * cos(phi);
-				walker[leg_num]->Z = home_z[leg_num]
+				sky_walker[leg_num].X = home_x[leg_num] - amplitudes[0] * cos(phi);
+				sky_walker[leg_num].Y = home_y[leg_num] - amplitudes[1] * cos(phi);
+				sky_walker[leg_num].Z = home_z[leg_num]
 						+ fabs(amplitudes[2]) * sin(phi);
 				if (tick >= numTicks - 1)
 					tripod_mode[leg_num] = 2; // смена режима
 				break;
 			case 2:                             //move foot back (on the ground)
-				walker[leg_num]->X = home_x[leg_num] + amplitudes[0] * cos(phi);
-				walker[leg_num]->Y = home_y[leg_num] + amplitudes[1] * cos(phi);
-				walker[leg_num]->Z = home_z[leg_num];
+				sky_walker[leg_num].X = home_x[leg_num] + amplitudes[0] * cos(phi);
+				sky_walker[leg_num].Y = home_y[leg_num] + amplitudes[1] * cos(phi);
+				sky_walker[leg_num].Z = home_z[leg_num];
 				if (tick >= numTicks - 1)
 					tripod_mode[leg_num] = 1; // смена режима
 				break;

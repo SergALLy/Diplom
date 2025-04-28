@@ -12,7 +12,7 @@
 #include "i2c.h"
 
 #define PERIOD_MS		3.0f
-#define DURATION		618
+#define DURATION		157 //618
 
 #define COXA_LENGTH 	61.0f	// Длина, ближайщего к корпусу сегмента
 #define FEMUR_LENGTH	75.3f	// Длина средне
