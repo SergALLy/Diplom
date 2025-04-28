@@ -49,10 +49,6 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-ps2_handle_t ps = { // Джойстик PS2
-		.spi_handle = &hspi2
-};
-
 bool success = true; // Флаг успешной работы программы
 
 /* USER CODE END PV */
@@ -116,8 +112,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  PS2_ReadData(&ps);
-	  HAL_Delay(20);
 
 	// Кнопка Start -> Все сервоприводы в центральное положение
 	if (PS2_READ_BUTTON(ps.buttons, BUTTON_START) && ps.ID == PS2_GREEN_MODE)

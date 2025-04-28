@@ -81,7 +81,7 @@ typedef struct {
 #define PS2_READ_BUTTON(BYTE,MASK)	((BYTE) & (uint16_t)(MASK))
 
 /*
- * Чтения данных с джойстика PS2
+ * Чтение данных с джойстика PS2
  * Входные данные:
  * 			handle - Дескриптор джойстика PS2
  * return:

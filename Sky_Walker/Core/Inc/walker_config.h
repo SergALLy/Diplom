@@ -10,36 +10,40 @@
 
 #include "walker.h"
 #include "i2c.h"
+#include "spi.h"
 
-#define PERIOD_MS		3.0f
-#define DURATION		157 //618
+#define PERIOD_MS		3.0f		// Период ШИМа
+#define DURATION		157 		// Продолжительность шага
 
-#define COXA_LENGTH 	61.0f	// Длина, ближайщего к корпусу сегмента
-#define FEMUR_LENGTH	75.3f	// Длина средне
-#define TIBIA_LENGTH	119.3f	// Длина голени (последний сегмент)
+#define COXA_LENGTH 	61.0f		// Длина от оси серво coxa до оси серво femur
+#define FEMUR_LENGTH	75.3f		// Длина от оси серво femur до оси серво tibia
+#define TIBIA_LENGTH	119.3f		// Длина от оси серво tibia до кончика ноги
 
-extern pca9685_handle_t pca_left;
-extern pca9685_handle_t pca_right;
+extern ps2_handle_t ps;				// Дескриптор джойстика PS2
+extern pca9685_handle_t pca_left;	// Дескриптор левого драйвера pca9685
+extern pca9685_handle_t pca_right;	// Дескриптор правого драйвера pca9685
 
-extern const leg_handle_t leg1;
-extern const leg_handle_t leg2;
-extern const leg_handle_t leg3;
-extern const leg_handle_t leg4;
-extern const leg_handle_t leg5;
-extern leg_handle_t leg6;
+// Дескрипторы ног шагохода
+extern leg_handle_t leg1; // Правая передняя
+extern leg_handle_t leg2; // Правая задняя
+extern leg_handle_t leg3; // Правая задняя
+extern leg_handle_t leg4; // Левая задняя
+extern leg_handle_t leg5; // Левая средняя
+extern leg_handle_t leg6; // Левая передняя
+// Описание шагохода
 extern walker_handle_t sky_walker;
 
-// Задание исходного положения
+// Исходного положение
 extern const float home_x[6];
 extern const float home_y[6];
 extern const float home_z[6];
 
-// Расстояние от центра туловища до серво coxa
+// Расстояние от центра туловища до оси серво coxa
 extern const float body_x[6];
 extern const float body_y[6];
 extern const float body_z[6];
 
-// калибровка сервоприводов
+// Калибровка сервоприводов
 extern const int8_t coxa_cal[6];
 extern const int8_t femur_cal[6];
 extern const int8_t tibia_cal[6];
