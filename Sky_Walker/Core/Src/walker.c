@@ -19,7 +19,8 @@ static uint16_t tick = 0;								// Вспомогательная, для пл�
 static float step_len_X, step_len_Y;					// Вспомогательные, длина шага
 static float sin_rot_Z, cos_rot_Z;						// Вспомогательные, поворот вокруг оси z
 
-static uint8_t tripod_mode[6] = { 1, 2, 1, 2, 1, 2 };	// Порядок шага для режима "треугольник"
+static uint8_t tripod_mode[6] = {1, 2, 1, 2, 1, 2};		// Порядок шага для режима "треугольник"
+static uint8_t wave_mode[6] = {1, 2, 3, 4, 5, 6};		// Порядок шага для режима "волна"
 
 static float map(float min_1, float max_1, float value, float min_2,
 		float max_2) {
@@ -317,4 +318,109 @@ void walker_tripod_mode(ps2_handle_t *ps) {
 		else
 			tick = 0;
 	}
+}
+
+void walker_wave_mode(ps2_handle_t *ps) {
+	/*
+	 *  Назначение: Реализация режима шага - волна ( 1 - идет, 5 - стоят)
+	 *  Входные параметры:
+	 *  	ps - дескриптор джойстика
+	 */
+	float amplitudes[3] = { 0, 0, 0 }; // массив амплитуд шага
+	// Приращения по осям x, y, z
+	int8_t RX = ps->right_stick.Y;
+	int8_t RY = ps->right_stick.X;
+	int8_t LX = ps->left_stick.X;
+
+	// Если процесс уже запущен или стики не в мертвой зоне
+	if ((abs(RX) > 15) || (abs(RY) > 15) || (abs(LX) > 15) || (tick > 0)) {
+		calc_step_len(RX, RY, LX); 	// Расчет длин шага
+		uint16_t numTicks = round(DURATION / PERIOD_MS / 6.0); // расчёт периода 1 шага
+		float phi = M_PI * tick / numTicks;	// текущая фаза шага
+		for (uint8_t leg_num = 0; leg_num < 6; leg_num++) {
+			calc_ampl(leg_num, amplitudes);	// расчёт амплитуд шага ноги
+			switch (wave_mode[leg_num]) {
+			case 1:                        //подъем и перемещение ноги
+				sky_walker[leg_num].X = home_x[leg_num] - amplitudes[0] * cos(phi);
+				sky_walker[leg_num].Y = home_y[leg_num] - amplitudes[1] * cos(phi);
+				sky_walker[leg_num].Z = home_z[leg_num] + fabs(amplitudes[2]) * sin(phi);
+				if (tick >= numTicks - 1)
+					wave_mode[leg_num] = 6; // смена режима
+				break;
+			case 2:                             // передвижение без подъема
+				sky_walker[leg_num].X = sky_walker[leg_num].X - amplitudes[0] / numTicks / 2.5;
+				sky_walker[leg_num].Y = sky_walker[leg_num].Y - amplitudes[1] / numTicks / 2.5;
+				sky_walker[leg_num].Z = home_z[leg_num];
+				if (tick >= numTicks - 1)
+					wave_mode[leg_num] = 1; // смена режима
+				break;
+			case 3:                             // передвижение без подъема
+				sky_walker[leg_num].X = sky_walker[leg_num].X - amplitudes[0] / numTicks / 2.5;
+				sky_walker[leg_num].Y = sky_walker[leg_num].Y - amplitudes[1] / numTicks / 2.5;
+				sky_walker[leg_num].Z = home_z[leg_num];
+				if (tick >= numTicks - 1)
+					wave_mode[leg_num] = 2; // смена режима
+				break;
+			case 4:                             // передвижение без подъема
+				sky_walker[leg_num].X = sky_walker[leg_num].X - amplitudes[0] / numTicks / 2.5;
+				sky_walker[leg_num].Y = sky_walker[leg_num].Y - amplitudes[1] / numTicks / 2.5;
+				sky_walker[leg_num].Z = home_z[leg_num];
+				if (tick >= numTicks - 1)
+					wave_mode[leg_num] = 3; // смена режима
+				break;
+			case 5:                             // передвижение без подъема
+				sky_walker[leg_num].X = sky_walker[leg_num].X - amplitudes[0] / numTicks / 2.5;
+				sky_walker[leg_num].Y = sky_walker[leg_num].Y - amplitudes[1] / numTicks / 2.5;
+				sky_walker[leg_num].Z = home_z[leg_num];
+				if (tick >= numTicks - 1)
+					wave_mode[leg_num] = 4; // смена режима
+				break;
+			case 6:                             // передвижение без подъема
+				sky_walker[leg_num].X = sky_walker[leg_num].X - amplitudes[0] / numTicks / 2.5;
+				sky_walker[leg_num].Y = sky_walker[leg_num].Y - amplitudes[1] / numTicks / 2.5;
+				sky_walker[leg_num].Z = home_z[leg_num];
+				if (tick >= numTicks - 1)
+					wave_mode[leg_num] = 5; // смена режима
+				break;
+			}
+		}
+		// увеличение tick
+		if (tick < numTicks - 1)
+			tick++;
+		else
+			tick = 0;
+	}
+}
+
+bool walker_read_mode(ps2_handle_t *ps) {
+	/*
+	 *  Назначение: Выбор режима работы робота
+	 *  Входные параметры:
+	 *  	ps - дескриптор джойстика
+	 * Return:
+	 * 		True - успешно чтение данных с джойстика
+	 * 		False - ошибка при чтении данных с джойстика
+	 */
+	bool success = true;
+
+	success &= PS2_ReadData(ps); // Чтение данных с джойстика
+	if (ps->ID == PS2_RED_MODE) {
+		if (PS2_READ_BUTTON(ps->buttons, BUTTON_UP)) {
+			mode = 0; // Остновка движения
+			gait = 0; // Смена редима ходьбы
+		}
+		if (PS2_READ_BUTTON(ps->buttons, BUTTON_DOWN)) {
+			mode = 0; // Остановка движения
+			gait = 1; // Смена режима ходьба
+		}
+		if (PS2_READ_BUTTON(ps->buttons, BUTTON_TRIANGLE)) {
+			mode = 1; // Подтвердить выбор режима и разрешить движение
+		}
+	}
+
+	if (PS2_READ_BUTTON(ps->buttons, BUTTON_START) && ps->ID == PS2_GREEN_MODE) {
+		mode = 99; // Режим установки серво в нейтральное положение
+	}
+
+	return success;
 }

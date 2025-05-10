@@ -64,4 +64,21 @@ bool walker_calc_ik(uint8_t leg_number, float x,
  */
 void walker_tripod_mode(ps2_handle_t *ps);
 
+/*
+ *  Назначение: Реализация режима шага - волна ( 1 - идет, 5 - стоят)
+ *  Входные параметры:
+ *  	ps - дескриптор джойстика
+ */
+void walker_wave_mode(ps2_handle_t *ps);
+
+/*
+ *  Назначение: Выбор режима работы робота
+ *  Входные параметры:
+ *  	ps - дескриптор джойстика
+ * Return:
+ * 		True - успешно чтение данных с джойстика
+ * 		False - ошибка при чтении данных с джойстика
+ */
+bool walker_read_mode(ps2_handle_t *ps);
+
 #endif /* INC_WALKER_H_ */

@@ -114,3 +114,5 @@ leg_handle_t leg6 ={ // Левая передняя
 // Описание шагохода
 walker_handle_t sky_walker = {};
 
+uint8_t mode = 0;
+uint8_t gait = 0;

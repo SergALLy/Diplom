@@ -112,30 +112,26 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-	// Кнопка Start -> Все сервоприводы в центральное положение
-	if (PS2_READ_BUTTON(ps.buttons, BUTTON_START) && ps.ID == PS2_GREEN_MODE)
-			success &= walker_servo_nelrtal();
-	// Движение
-	if (ps.ID == PS2_RED_MODE)
-	{
-
+	if (mode != 99){ // Перестановка ног робота
 		for (uint8_t i =0; i<6; i++)
 		{
 			success &= walker_calc_ik(i, sky_walker[i].X, sky_walker[i].Y, sky_walker[i].Z);
 		}
+	}
 
-		if ((abs(ps.right_stick.Y) > 15) || (abs(ps.right_stick.X) > 15) || (abs(ps.right_stick.Y) > 15))
-		{
-			walker_tripod_mode(&ps);
-		}
+	if (mode == 1){ // Движение робота
+		if (gait == 0) walker_tripod_mode(&ps); // Режим "Треугольник"
+		if (gait == 1) walker_wave_mode(&ps);	// Режим "Волна"
+	}
+
+	if (mode == 99){ // Установка сервоприводов в нейтральное положение
+		success &= walker_servo_nelrtal();
 	}
 
 	if (success == true) HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 	else HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
   }
-
   /* USER CODE END 3 */
 }
 
@@ -192,8 +188,8 @@ void SystemClock_Config(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) // Функция обработчик прерываний
 {
   if (htim->Instance == TIM6) // Прерывание от таймерв 6
-  {
-    PS2_ReadData(&ps);
+  { // Чтение данных с джойстика и выбор режима движения
+    success &= walker_read_mode(&ps);
   }
 }
 /* USER CODE END 4 */

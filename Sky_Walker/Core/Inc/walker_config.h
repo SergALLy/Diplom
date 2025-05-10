@@ -48,4 +48,7 @@ extern const int8_t coxa_cal[6];
 extern const int8_t femur_cal[6];
 extern const int8_t tibia_cal[6];
 
+extern uint8_t mode;
+extern uint8_t gait;
+
 #endif /* INC_WALKER_CONFIG_H_ */
