@@ -28,9 +28,9 @@ const float body_z[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
  * 		angle	-> вверх;	-angle	-> вниз
  */
 
-const int8_t coxa_cal[6]  = {0, 1, 0, -1, -1, 1};
+const int8_t coxa_cal[6]  = {0, 1, 0, -1, 0, 1};
 const int8_t femur_cal[6]  = {0, 0, 0, 0, 0, 0};
-const int8_t tibia_cal[6] = {0, 0, 0, 0, 0, 0};
+const int8_t tibia_cal[6] = {0, 0, 0, 1, 1, 1};
 
 // Дескриптор джойстика PS2
 ps2_handle_t ps = {

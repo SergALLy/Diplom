@@ -16,6 +16,8 @@
 #define DEG_TO_RAD	(M_PI / 180.0)						// Перевод из градусов в радианы
 
 static uint16_t tick = 0;								// Вспомогательная, для плавного шага
+static uint16_t duration = 314;								// Продолжительность шага
+
 static float step_len_X, step_len_Y;					// Вспомогательные, длина шага
 static float sin_rot_Z, cos_rot_Z;						// Вспомогательные, поворот вокруг оси z
 
@@ -290,7 +292,7 @@ void walker_tripod_mode(ps2_handle_t *ps) {
 	// Если процесс уже запущен или стики не в мертвой зоне
 	if ((abs(RX) > 15) || (abs(RY) > 15) || (abs(LX) > 15) || (tick > 0)) {
 		calc_step_len(RX, RY, LX); 	// Расчет длин шага
-		uint16_t numTicks = round(DURATION / PERIOD_MS / 2.0); // расчёт периода 1 шага
+		uint16_t numTicks = round(duration / PERIOD_MS / 2.0); // расчёт периода 1 шага
 		float phi = M_PI * tick / numTicks;	// текущая фаза шага
 		for (uint8_t leg_num = 0; leg_num < 6; leg_num++) {
 			calc_ampl(leg_num, amplitudes);	// расчёт амплитуд шага ноги
@@ -335,7 +337,7 @@ void walker_wave_mode(ps2_handle_t *ps) {
 	// Если процесс уже запущен или стики не в мертвой зоне
 	if ((abs(RX) > 15) || (abs(RY) > 15) || (abs(LX) > 15) || (tick > 0)) {
 		calc_step_len(RX, RY, LX); 	// Расчет длин шага
-		uint16_t numTicks = round(DURATION / PERIOD_MS / 6.0); // расчёт периода 1 шага
+		uint16_t numTicks = round(duration / PERIOD_MS / 6.0); // расчёт периода 1 шага
 		float phi = M_PI * tick / numTicks;	// текущая фаза шага
 		for (uint8_t leg_num = 0; leg_num < 6; leg_num++) {
 			calc_ampl(leg_num, amplitudes);	// расчёт амплитуд шага ноги
@@ -402,6 +404,7 @@ bool walker_read_mode(ps2_handle_t *ps) {
 	 * 		False - ошибка при чтении данных с джойстика
 	 */
 	bool success = true;
+	 uint8_t flag = 0;
 
 	success &= PS2_ReadData(ps); // Чтение данных с джойстика
 	if (ps->ID == PS2_RED_MODE) {
@@ -416,6 +419,11 @@ bool walker_read_mode(ps2_handle_t *ps) {
 		if (PS2_READ_BUTTON(ps->buttons, BUTTON_TRIANGLE)) {
 			mode = 1; // Подтвердить выбор режима и разрешить движение
 		}
+		if (PS2_READ_BUTTON(ps->buttons, BUTTON_SELECT)){
+			if (flag == 0) {duration = 314; flag = 1;}
+			else {duration = 157; flag = 0;}
+		}
+		//if (PS2_READ_BUTTON(ps->buttons, BUTTON_L1)) duration = 157;
 	}
 
 	if (PS2_READ_BUTTON(ps->buttons, BUTTON_START) && ps->ID == PS2_GREEN_MODE) {
