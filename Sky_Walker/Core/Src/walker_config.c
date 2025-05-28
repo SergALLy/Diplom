@@ -9,16 +9,14 @@
 // Исходного положение
 const float home_x[6] = {  96.4,    0.0,  -96.4,  -96.4,    0.0,   96.4};
 const float home_y[6] = {  96.4,  136.3,   96.4,  -96.4, -136.3,  -96.4};
-const float home_z[6] = {  -115,   -115,   -115,   -115,   -115,   -115};
+const float home_z[6] = {  -120,   -120,   -120,   -120,   -120,   -120};
 
 // Расстояние от центра туловища до оси серво coxa
 const float body_x[6] = {134.0, 0.0, -134.0, -134.0, 0.0, 134.0};
 const float body_y[6] = {81.5, 109.6, 81.5, -81.5, -109.6, -81.5};
 const float body_z[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
-// Калибровка сервоприводов
-
-/*
+/* Калибровка сервоприводов
  *  coxa:
  * 		левый:	-angle	-> вперед;	angle	-> назад
  * 		правый:	angle	-> вперед;	-angle	-> назад
@@ -27,10 +25,9 @@ const float body_z[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
  * 	tibia:
  * 		angle	-> вверх;	-angle	-> вниз
  */
-
-const int8_t coxa_cal[6]  = {0, 1, 0, -1, 0, 1};
-const int8_t femur_cal[6]  = {0, 0, 0, 0, 0, 0};
-const int8_t tibia_cal[6] = {0, 0, 0, 1, 1, 1};
+const float coxa_cal[6]  = {0, 2, 0, -3, -5, 1};
+const float femur_cal[6]  = {0, 6, 1.5, 10, 6, -1};
+const float tibia_cal[6] = {0, -3, 3, 10, 19, 9};
 
 // Дескриптор джойстика PS2
 ps2_handle_t ps = {
@@ -114,5 +111,11 @@ leg_handle_t leg6 ={ // Левая передняя
 // Описание шагохода
 walker_handle_t sky_walker = {};
 
-uint8_t mode = 0;
-uint8_t gait = 0;
+// Флаги
+uint8_t mode; // Выбор режима
+uint8_t gait; // Выбор походки
+
+// Приращения для изменения положения корпуса
+float offset_x[6] = {0, 0, 0, 0, 0, 0};
+float offset_y[6] = {0, 0, 0, 0, 0, 0};
+float offset_z[6] = {0, 0, 0, 0, 0, 0};

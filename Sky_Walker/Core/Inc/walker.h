@@ -72,6 +72,27 @@ void walker_tripod_mode(ps2_handle_t *ps);
 void walker_wave_mode(ps2_handle_t *ps);
 
 /*
+ *  Назначение: Реализация режима шага - тетрапод ( 2 - идут, 4 - стоят)
+ *  Входные параметры:
+ *  	ps - дескриптор джойстика
+ */
+void walker_tetrapod_mode(ps2_handle_t *ps);
+
+/*
+ *  Назначение: Режим ходьбы насекомое
+ *  Входные параметры:
+ *  	ps - дескриптор джойстика
+ */
+void walker_ripple_mode(ps2_handle_t *ps);
+
+/*
+ *  Назначение: Перемещение корпуса по осям
+ *  Входные параметры:
+ *  	ps - дескриптор джойстика
+ */
+void walker_move_body(ps2_handle_t *ps);
+
+/*
  *  Назначение: Выбор режима работы робота
  *  Входные параметры:
  *  	ps - дескриптор джойстика
@@ -79,6 +100,6 @@ void walker_wave_mode(ps2_handle_t *ps);
  * 		True - успешно чтение данных с джойстика
  * 		False - ошибка при чтении данных с джойстика
  */
-bool walker_read_mode(ps2_handle_t *ps);
+void walker_read_mode(ps2_handle_t *ps);
 
 #endif /* INC_WALKER_H_ */

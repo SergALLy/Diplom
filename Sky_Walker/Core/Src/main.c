@@ -50,6 +50,7 @@
 
 /* USER CODE BEGIN PV */
 bool success = true; // Флаг успешной работы программы
+uint8_t flag_mode = 0;
 
 /* USER CODE END PV */
 
@@ -112,16 +113,26 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	if (flag_mode == 1) {
+		walker_read_mode(&ps); // Выбор режима работы робота
+		flag_mode = 0;
+	}
 	if (mode != 99){ // Перестановка ног робота
 		for (uint8_t i =0; i<6; i++)
 		{
-			success &= walker_calc_ik(i, sky_walker[i].X, sky_walker[i].Y, sky_walker[i].Z);
+			success &= walker_calc_ik(i, sky_walker[i].X+offset_x[i], sky_walker[i].Y+offset_y[i], sky_walker[i].Z+offset_z[i]);
 		}
 	}
 
 	if (mode == 1){ // Движение робота
 		if (gait == 0) walker_tripod_mode(&ps); // Режим "Треугольник"
 		if (gait == 1) walker_wave_mode(&ps);	// Режим "Волна"
+		if (gait == 2) walker_tetrapod_mode(&ps);
+		if (gait == 3) walker_ripple_mode(&ps);
+	}
+
+	if (mode == 2){ // Перемещение корпуса по осям
+		walker_move_body(&ps);
 	}
 
 	if (mode == 99){ // Установка сервоприводов в нейтральное положение
@@ -188,8 +199,9 @@ void SystemClock_Config(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) // Функция обработчик прерываний
 {
   if (htim->Instance == TIM6) // Прерывание от таймерв 6
-  { // Чтение данных с джойстика и выбор режима движения
-    success &= walker_read_mode(&ps);
+  { // Чтение данных с джойстика
+    success &= PS2_ReadData(&ps);
+    flag_mode = 1;
   }
 }
 /* USER CODE END 4 */

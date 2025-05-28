@@ -5,9 +5,11 @@
  *      Author: SergALLy
  */
 #include "walker.h"
-#include "assert.h"
 #include "math.h"
 #include "stdlib.h"
+#include "usart.h"
+
+float test[3] = {0,0,0};
 
 #define MAX_SERVO_POS		2958 						// Зачение ШИМа в положении серва 225deg
 #define MIN_SERVO_POS		1138  						// Зачение ШИМа в положении серва 45deg
@@ -15,14 +17,20 @@
 #define RAD_TO_DEG	(180.0 / M_PI)						// Перевод из радиан в градусы
 #define DEG_TO_RAD	(M_PI / 180.0)						// Перевод из градусов в радианы
 
+#define MAX_MOVING_BODY		30							// Максимальное перемещение корпуса
+
+static uint8_t flag = 0;								// Флаг
+
 static uint16_t tick = 0;								// Вспомогательная, для плавного шага
-static uint16_t duration = 314;								// Продолжительность шага
+static uint16_t duration = 314;							// Продолжительность шага
 
 static float step_len_X, step_len_Y;					// Вспомогательные, длина шага
 static float sin_rot_Z, cos_rot_Z;						// Вспомогательные, поворот вокруг оси z
 
-static uint8_t tripod_mode[6] = {1, 2, 1, 2, 1, 2};		// Порядок шага для режима "треугольник"
-static uint8_t wave_mode[6] = {1, 2, 3, 4, 5, 6};		// Порядок шага для режима "волна"
+static uint8_t tripod_mode[6] = {1, 2, 1, 2, 1, 2};		// Порядок ног для режима "треугольник"
+static uint8_t wave_mode[6] = {1, 2, 3, 4, 5, 6};		// Порядок ног для режима "волна"
+static uint8_t tetrapod_mode[6] = {1, 2, 3, 1, 3, 2};	// Порядок ног для режима "тетрапод"
+static uint8_t ripple_mode[6] = {2, 6, 4, 1, 3, 5};		// Режим ходьбы насеомое
 
 static float map(float min_1, float max_1, float value, float min_2,
 		float max_2) {
@@ -37,13 +45,10 @@ static float map(float min_1, float max_1, float value, float min_2,
 	 *  Return:
 	 *  	Значение в интервале 2
 	 */
-	if (value <= min_1)
-		return min_2;
-	if (value == 0)
-		return (max_2 - min_2) / 2 + min_2;
-	if (value >= max_1)
-		return max_2;
-	return (value - min_1) / (max_1 - min_1) * (max_2 - min_2) + min_2;
+	if (value <= min_1) return min_2;
+	if (value >= max_1) return max_2;
+	if (value == 0) return (max_2 - min_2)/2+min_2;
+	return (value-min_1)/(max_1-min_1)*(max_2-min_2) + min_2;
 }
 
 static float constrain(float x, float min, float max) {
@@ -73,8 +78,8 @@ static uint16_t angle_2_u16(float angle) {
 	 * Return:
 	 * 		Значение ШИМ (time off)
 	 */
-	assert(angle >= 0);
-	assert(angle <= 180);
+	if (angle < 0) angle = 0;
+	if (angle > 180) angle = 180;
 
 	return map(0, 180, angle, MIN_SERVO_POS, MAX_SERVO_POS);
 }
@@ -287,7 +292,7 @@ void walker_tripod_mode(ps2_handle_t *ps) {
 	// Приращения по осям x, y, z
 	int8_t RX = ps->right_stick.Y;
 	int8_t RY = ps->right_stick.X;
-	int8_t LX = ps->left_stick.X;
+	int8_t LX = -ps->left_stick.X;
 
 	// Если процесс уже запущен или стики не в мертвой зоне
 	if ((abs(RX) > 15) || (abs(RY) > 15) || (abs(LX) > 15) || (tick > 0)) {
@@ -332,7 +337,7 @@ void walker_wave_mode(ps2_handle_t *ps) {
 	// Приращения по осям x, y, z
 	int8_t RX = ps->right_stick.Y;
 	int8_t RY = ps->right_stick.X;
-	int8_t LX = ps->left_stick.X;
+	int8_t LX = -ps->left_stick.X;
 
 	// Если процесс уже запущен или стики не в мертвой зоне
 	if ((abs(RX) > 15) || (abs(RY) > 15) || (abs(LX) > 15) || (tick > 0)) {
@@ -394,7 +399,164 @@ void walker_wave_mode(ps2_handle_t *ps) {
 	}
 }
 
-bool walker_read_mode(ps2_handle_t *ps) {
+void walker_tetrapod_mode(ps2_handle_t *ps){
+	/*
+	 *  Назначение: Реализация режима шага - тетрапод ( 2 - идут, 4 - стоят)
+	 *  Входные параметры:
+	 *  	ps - дескриптор джойстика
+	 */
+	float amplitudes[3] = { 0, 0, 0 }; // массив амплитуд шага
+	// Приращения по осям x, y, z
+	int8_t RX = ps->right_stick.Y;
+	int8_t RY = ps->right_stick.X;
+	int8_t LX = -ps->left_stick.X;
+
+	// Если процесс уже запущен или стики не в мертвой зоне
+	if ((abs(RX) > 15) || (abs(RY) > 15) || (abs(LX) > 15) || (tick > 0)) {
+		calc_step_len(RX, RY, LX); 	// Расчет длин шага
+		uint16_t numTicks = round(duration / PERIOD_MS / 3.0); // расчёт периода 1 шага
+		float phi = M_PI * tick / numTicks;	// текущая фаза шага
+		for (uint8_t leg_num = 0; leg_num < 6; leg_num++) {
+			calc_ampl(leg_num, amplitudes);	// расчёт амплитуд шага ноги
+			switch (tetrapod_mode[leg_num]) {
+			case 1:
+				sky_walker[leg_num].X = home_x[leg_num] - amplitudes[0] * cos(phi);
+				sky_walker[leg_num].Y = home_y[leg_num] - amplitudes[1] * cos(phi);
+				sky_walker[leg_num].Z = home_z[leg_num]	+ fabs(amplitudes[2]) * sin(phi);
+				if (tick >= numTicks - 1)
+					tetrapod_mode[leg_num] = 2; // смена режима
+				break;
+			case 2:
+				sky_walker[leg_num].X = sky_walker[leg_num].X - amplitudes[0]/numTicks;
+				sky_walker[leg_num].Y = sky_walker[leg_num].Y - amplitudes[1]/numTicks;
+				sky_walker[leg_num].Z = home_z[leg_num];
+				if (tick >= numTicks - 1)
+					tetrapod_mode[leg_num] = 3; // смена режима
+				break;
+			case 3:
+				sky_walker[leg_num].X = sky_walker[leg_num].X - amplitudes[0]/numTicks;
+				sky_walker[leg_num].Y = sky_walker[leg_num].Y - amplitudes[1]/numTicks;
+				sky_walker[leg_num].Z = home_z[leg_num];
+				if (tick >= numTicks - 1)
+						tetrapod_mode[leg_num] = 1; // смена режима
+				break;
+			}
+		}
+		// увеличение tick
+		if (tick < numTicks - 1)
+			tick++;
+		else
+			tick = 0;
+	}
+}
+
+void walker_ripple_mode(ps2_handle_t *ps){
+	/*
+	 *  Назначение: Режим ходьбы насекомое
+	 *  Входные параметры:
+	 *  	ps - дескриптор джойстика
+	 */
+	float amplitudes[3] = { 0, 0, 0 }; // массив амплитуд шага
+	// Приращения по осям x, y, z
+	int8_t RX = ps->right_stick.Y;
+	int8_t RY = ps->right_stick.X;
+	int8_t LX = -ps->left_stick.X;
+
+	// Если процесс уже запущен или стики не в мертвой зоне
+	if ((abs(RX) > 15) || (abs(RY) > 15) || (abs(LX) > 15) || (tick > 0)) {
+		calc_step_len(RX, RY, LX); 	// Расчет длин шага
+		uint16_t numTicks = round(duration / PERIOD_MS / 6.0); // расчёт периода 1 шага
+		float phi = M_PI * tick / (numTicks*2);	// текущая фаза шага
+		for (uint8_t leg_num = 0; leg_num < 6; leg_num++) {
+			calc_ampl(leg_num, amplitudes);	// расчёт амплитуд шага ноги
+			switch (ripple_mode[leg_num]) {
+			case 1:
+				sky_walker[leg_num].X = home_x[leg_num] - amplitudes[0] * cos(phi);
+				sky_walker[leg_num].Y = home_y[leg_num] - amplitudes[1] * cos(phi);
+				sky_walker[leg_num].Z = home_z[leg_num] + fabs(amplitudes[2]) * sin(phi);
+				if (tick >= numTicks - 1)
+					ripple_mode[leg_num] = 2; // смена режима
+				break;
+			case 2:
+				sky_walker[leg_num].X = home_x[leg_num] - amplitudes[0] * cos(phi);
+				sky_walker[leg_num].Y = home_y[leg_num] - amplitudes[1] * cos(phi);
+				sky_walker[leg_num].Z = home_z[leg_num] + fabs(amplitudes[2]) * sin(phi+M_PI_2);
+				if (tick >= numTicks - 1)
+					ripple_mode[leg_num] = 3; // смена режима
+				break;
+			case 3:
+				sky_walker[leg_num].X = sky_walker[leg_num].X - amplitudes[0] / numTicks / 2.0;
+				sky_walker[leg_num].Y = sky_walker[leg_num].Y - amplitudes[1] / numTicks / 2.0;
+				sky_walker[leg_num].Z = home_z[leg_num];
+				if (tick >= numTicks - 1)
+					ripple_mode[leg_num] = 4; // смена режима
+				break;
+			case 4:
+				sky_walker[leg_num].X = sky_walker[leg_num].X - amplitudes[0] / numTicks / 2.0;
+				sky_walker[leg_num].Y = sky_walker[leg_num].Y - amplitudes[1] / numTicks / 2.0;
+				sky_walker[leg_num].Z = home_z[leg_num];
+				if (tick >= numTicks - 1)
+					ripple_mode[leg_num] = 5; // смена режима
+				break;
+			case 5:
+				sky_walker[leg_num].X = sky_walker[leg_num].X - amplitudes[0] / numTicks / 2.0;
+				sky_walker[leg_num].Y = sky_walker[leg_num].Y - amplitudes[1] / numTicks / 2.0;
+				sky_walker[leg_num].Z = home_z[leg_num];
+				if (tick >= numTicks - 1)
+					ripple_mode[leg_num] = 6; // смена режима
+				break;
+			case 6:
+				sky_walker[leg_num].X = sky_walker[leg_num].X - amplitudes[0] / numTicks / 2.0;
+				sky_walker[leg_num].Y = sky_walker[leg_num].Y - amplitudes[1] / numTicks / 2.0;
+				sky_walker[leg_num].Z = home_z[leg_num];
+				if (tick >= numTicks - 1)
+					ripple_mode[leg_num] = 1; // смена режима
+				break;
+			}
+		}
+		// увеличение tick
+		if (tick < numTicks - 1)
+			tick++;
+		else
+			tick = 0;
+	}
+}
+
+void walker_move_body(ps2_handle_t *ps){
+	/*
+	 * Назначение: движение корпуса по осям
+	 * Входные параметры:
+	 *  	ps - дескриптор джойстика
+	 */
+	float RX = map(-127, 127, (ps->right_stick.Y), 2*MAX_MOVING_BODY, -2*MAX_MOVING_BODY); // Перемещение по оси X
+	float RY = map(-127, 127, (ps->right_stick.X), -2*MAX_MOVING_BODY, 2*MAX_MOVING_BODY); // Перемещение по оси Y
+	float RZ = 0;
+	if (ps->left_stick.Y<=0) RZ = map(-127, 0, (ps->left_stick.Y), MAX_MOVING_BODY, 0);   // Пермешение ро оси Z
+	else RZ = map(0, 127, (ps->left_stick.Y), 0, -2*MAX_MOVING_BODY);
+
+	for (uint8_t leg_num = 0; leg_num < 6; leg_num++)
+	{	// Перемещение корпуса
+		sky_walker[leg_num].X = home_x[leg_num] + RX;
+		sky_walker[leg_num].Y = home_y[leg_num] + RY;
+		sky_walker[leg_num].Z = home_z[leg_num] + RZ;
+	}
+
+	if (flag & (1<<1)) // Зафиксировать положение?
+	{
+		for (uint8_t leg_num = 0; leg_num < 6; leg_num++) { // Фиксация пермещения
+			offset_x[leg_num] += RX;
+			offset_y[leg_num] += RY;
+			offset_z[leg_num] += RZ;
+			sky_walker[leg_num].X = home_x[leg_num];
+			sky_walker[leg_num].Y = home_y[leg_num];
+			sky_walker[leg_num].Z = home_z[leg_num];
+		}
+		flag &= ~(1<<1); // Сброс флага
+		mode = 0;		 // Сброс режима
+	}
+}
+
+void walker_read_mode(ps2_handle_t *ps) {
 	/*
 	 *  Назначение: Выбор режима работы робота
 	 *  Входные параметры:
@@ -403,32 +565,63 @@ bool walker_read_mode(ps2_handle_t *ps) {
 	 * 		True - успешно чтение данных с джойстика
 	 * 		False - ошибка при чтении данных с джойстика
 	 */
-	bool success = true;
-	 uint8_t flag = 0;
 
-	success &= PS2_ReadData(ps); // Чтение данных с джойстика
 	if (ps->ID == PS2_RED_MODE) {
 		if (PS2_READ_BUTTON(ps->buttons, BUTTON_UP)) {
 			mode = 0; // Остновка движения
-			gait = 0; // Смена редима ходьбы
+			gait = 0; // Смена редима ходьбы на треугольник
+			HAL_UART_Transmit(&huart2, (uint8_t*)"Режим ходьбы \"Треугольник\"\n", 27, 100);
 		}
 		if (PS2_READ_BUTTON(ps->buttons, BUTTON_DOWN)) {
 			mode = 0; // Остановка движения
-			gait = 1; // Смена режима ходьба
+			gait = 1; // Смена режима ходьба на волну
+			HAL_UART_Transmit(&huart2, (uint8_t*)"Режим ходьбы \"Волна\"\n", 21, 100);
+		}
+		if (PS2_READ_BUTTON(ps->buttons, BUTTON_LEFT)) {
+			mode = 0; // Остановка движения
+			gait = 2; // Смена режима ходьба на тетрапод
+			HAL_UART_Transmit(&huart2, (uint8_t*)"Режим ходьбы \"Тетрапод\"\n", 24, 100);
+		}
+		if (PS2_READ_BUTTON(ps->buttons, BUTTON_RIGHT)) {
+			mode = 0; // Остановка движения
+			gait = 3; // Смена режима ходьба на насекомое
+			HAL_UART_Transmit(&huart2, (uint8_t*)"Режим ходьбы \"Насекомое\"\n", 25, 100);
 		}
 		if (PS2_READ_BUTTON(ps->buttons, BUTTON_TRIANGLE)) {
 			mode = 1; // Подтвердить выбор режима и разрешить движение
+			HAL_UART_Transmit(&huart2, (uint8_t*)"Старт движения\n", 15, 100);
 		}
-		if (PS2_READ_BUTTON(ps->buttons, BUTTON_SELECT)){
-			if (flag == 0) {duration = 314; flag = 1;}
-			else {duration = 157; flag = 0;}
+		if (PS2_READ_BUTTON(ps->buttons, BUTTON_SELECT)){ // Выбор режима скорости
+			if (flag & 0x01) {
+				duration = 314; flag &= ~(1<<0); // Медленный режим
+				HAL_UART_Transmit(&huart2, (uint8_t*)"Быстрый режим\n", 14, 100);
+			}
+			else {
+				duration = 157; flag |= 1<<0; // Быстрый режим
+				HAL_UART_Transmit(&huart2, (uint8_t*)"Медленный режим\n", 16, 100);
+			}
 		}
-		//if (PS2_READ_BUTTON(ps->buttons, BUTTON_L1)) duration = 157;
+		if (PS2_READ_BUTTON(ps->buttons, BUTTON_SQUARE))
+		{
+			mode = 2; // Режим перемещения корпуса
+			HAL_UART_Transmit(&huart2, (uint8_t*)"Перемещение корпуса\n", 20, 100);
+		}
+		if (PS2_READ_BUTTON(ps->buttons, BUTTON_L1))
+		{
+			flag |= (1<<1); // Зафиксировать перемещение
+		}
+		if (PS2_READ_BUTTON(ps->buttons, BUTTON_L2))
+		{
+			flag &= ~(1<<1); // Сброс перемщения корпуса
+			for (uint8_t leg_num = 0; leg_num < 6; leg_num++) {
+				offset_x[leg_num] = 0;
+				offset_y[leg_num] = 0;
+				offset_z[leg_num] = 0;
+			}
+		}
 	}
 
 	if (PS2_READ_BUTTON(ps->buttons, BUTTON_START) && ps->ID == PS2_GREEN_MODE) {
 		mode = 99; // Режим установки серво в нейтральное положение
 	}
-
-	return success;
 }

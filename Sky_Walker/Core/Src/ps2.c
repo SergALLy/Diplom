@@ -92,7 +92,7 @@ bool PS2_ReadData(ps2_handle_t *handle)
 		handle -> right_stick.X = map(0, 255, RxData[5], -127, 127);
 		handle -> right_stick.Y = map(0, 255, RxData[6], 127, -127);
 		handle -> left_stick.X = map(0, 255, RxData[7], -127, 127);
-		handle -> left_stick.Y = -map(0, 255, RxData[8], -127, 127);
+		handle -> left_stick.Y = map(0, 255, RxData[8], 127, -127);
 	}
 	return success;
 }
