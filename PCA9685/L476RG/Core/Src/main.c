@@ -52,6 +52,9 @@ pca9685_handle_t pca = {
 		.inverted = false
 };
 bool success = true;
+uint16_t pwm = 0;
+uint16_t i=0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -102,6 +105,7 @@ int main(void)
   success &= pca9685_set_pwm_frequency(&pca, 50.0f);
   if (success) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
   else HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -109,12 +113,16 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-for (uint16_t i=0; i<4090; i+=10)
-{
-	success &= pca9685_set_channel_pwm_times(&pca, 0, 0, i);
-	HAL_Delay(100);
-}
+
+
     /* USER CODE BEGIN 3 */
+	  for (; i<4090; i+=10)
+	  {
+	  	success &= pca9685_set_channel_pwm_times(&pca, 5, 0, i);
+	  	success &= pca9685_servo_read(&pca, 5, &pwm);
+	  	HAL_Delay(250);
+	  }
+	  i =0;
   }
   /* USER CODE END 3 */
 }

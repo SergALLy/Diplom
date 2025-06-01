@@ -231,3 +231,4 @@ bool pca9685_set_channel_duty_cycle(pca9685_handle_t *handle, unsigned channel, 
 		return pca9685_set_channel_pwm_times(handle, channel, on_time, off_time);
 	}
 }
+

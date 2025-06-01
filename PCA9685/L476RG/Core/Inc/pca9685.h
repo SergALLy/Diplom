@@ -112,3 +112,4 @@ bool pca9685_set_channel_pwm_times(pca9685_handle_t *handle, unsigned channel, u
  * @return True on success, false otherwise.
  */
 bool pca9685_set_channel_duty_cycle(pca9685_handle_t *handle, unsigned channel, float duty_cycle, bool logarithmic);
+

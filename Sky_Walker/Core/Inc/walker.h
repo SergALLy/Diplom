@@ -10,8 +10,8 @@
 
 #include <stdint.h>
 #include "stdbool.h"
-#include "pca9685.h"
-#include "ps2.h"
+#include "pca9685.h"	// Библиотека драйвера
+#include "ps2.h"		// Библиотека джойстика
 
 typedef struct {
 	pca9685_handle_t *pca_handle;
@@ -91,6 +91,23 @@ void walker_ripple_mode(ps2_handle_t *ps);
  *  	ps - дескриптор джойстика
  */
 void walker_move_body(ps2_handle_t *ps);
+
+/*
+ *  Назначение: Поворот корпуса вокруг осей
+ *  Входные параметры:
+ *  	 ps - дескриптор джойстика
+ */
+void walker_rotate_body(ps2_handle_t *ps);
+
+/*
+ *  Назначение: Подъем передних ног робота
+ *  Входные параметры:
+ *  	 ps - дескриптор джойстика
+ *  return:
+ * 		True - успешно
+ * 		False - иначе
+ */
+bool walker_lift_leg(ps2_handle_t *ps);
 
 /*
  *  Назначение: Выбор режима работы робота

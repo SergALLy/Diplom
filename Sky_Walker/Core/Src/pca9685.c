@@ -231,3 +231,26 @@ bool pca9685_set_channel_duty_cycle(pca9685_handle_t *handle, unsigned channel, 
 		return pca9685_set_channel_pwm_times(handle, channel, on_time, off_time);
 	}
 }
+
+bool pca9685_read_channel_pwm(pca9685_handle_t *handle, uint8_t channel, uint16_t *pwm)
+{
+	/*
+	 * Назначение: Чтение значения шима на канале
+	 * Параметры:
+	 * 	handle - дескриптор на драйвер
+	 * 	channel - номер канала
+	 * 	pwm - переменная куда вернётся занчение Шима
+	 * Return:
+	 * 	True - успешное чтение
+	 * 	False - иначе
+	 */
+	bool success = true;
+	uint8_t data = 0;
+
+	success &= pca9685_read_u8(handle, PCA9685_REGISTER_LED0_ON_L + channel*4 + 0x02, &data); // Чтение младшей части
+	*pwm = data; data = 0;
+	success &= pca9685_read_u8(handle, PCA9685_REGISTER_LED0_ON_L + channel*4 + 0x02 + 0x01, &data); // Чтение старшей части
+	*pwm |= (data<<8);
+
+	return success;
+}

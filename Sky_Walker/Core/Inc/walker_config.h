@@ -50,7 +50,7 @@ extern walker_handle_t sky_walker;
 // Флаги
 extern uint8_t mode; // Выбор режима
 extern uint8_t gait; // Выбор походки
-
+extern uint8_t flag_IK_control_leg;	// Флаг управления ОК передними ногами
 // Приращения для изменения положения корпуса
 extern float offset_x[6];
 extern float offset_y[6];

@@ -112,3 +112,15 @@ bool pca9685_set_channel_pwm_times(pca9685_handle_t *handle, unsigned channel, u
  * @return True on success, false otherwise.
  */
 bool pca9685_set_channel_duty_cycle(pca9685_handle_t *handle, unsigned channel, float duty_cycle, bool logarithmic);
+
+/*
+ * Назначение: Чтение значения шима на канале
+ * Параметры:
+ * 	handle - дескриптор на драйвер
+ * 	channel - номер канала
+ * 	pwm - переменная куда вернётся занчение Шима
+ * Return:
+ * 	True - успешное чтение
+ * 	False - иначе
+ */
+bool pca9685_read_channel_pwm(pca9685_handle_t *handle, uint8_t channel, uint16_t *pwm);

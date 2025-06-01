@@ -112,8 +112,9 @@ leg_handle_t leg6 ={ // Левая передняя
 walker_handle_t sky_walker = {};
 
 // Флаги
-uint8_t mode; // Выбор режима
-uint8_t gait; // Выбор походки
+uint8_t mode = 0; // Выбор режима
+uint8_t gait = 0; // Выбор походки
+uint8_t flag_IK_control_leg = (1 << 0) | (1 << 5); // Флаг управления ОК передними ногами
 
 // Приращения для изменения положения корпуса
 float offset_x[6] = {0, 0, 0, 0, 0, 0};
